@@ -267,7 +267,7 @@ input::placeholder{color:#475569}
 <div class="result-box"><div class="val" style="font-size:1rem">{{ fmt1(itemDays) }} 日工</div><div class="lbl">以平均每日計</div></div>
 </div>
 <div v-if="itemCost>0&&results.hourly>0" class="result-highlight" style="margin-top:.75rem">
-<div class="val" style="font-size:.95rem">買呢件嘢 = 你要返 {{ itemWorkPercent }}% 個月人工</div>
+<div class="val" style="font-size:.95rem">買呢件嘢 = 你要返 {{ itemWorkPercent }} 個月人工</div>
 <div class="lbl">計完仲想買？🤔</div>
 </div>
 </div>
@@ -342,7 +342,7 @@ return{hourly,daily,weekly,monthly,yearly,perMinute:hourly/60,avgDailyHours:avgD
 const itemMinutes=computed(()=>results.value.hourly>0&&itemCost.value>0?itemCost.value/results.value.hourly*60:0)
 const itemHours=computed(()=>results.value.hourly>0&&itemCost.value>0?itemCost.value/results.value.hourly:0)
 const itemDays=computed(()=>results.value.avgDailyHours>0&&itemCost.value>0?itemHours.value/results.value.avgDailyHours:0)
-const itemWorkPercent=computed(()=>results.value.monthly>0&&itemCost.value>0?Math.round(itemCost.value/results.value.monthly*100):0)
+const itemWorkPercent=computed(()=>results.value.monthly>0&&itemCost.value>0?+(itemCost.value/results.value.monthly).toFixed(2):0)
 
 function copyLongToShort(){
 if(workInputMode.value==='hours'){shortWeekHours.value=[...longWeekHours.value]}
