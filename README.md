@@ -4,11 +4,12 @@
 
 輸入人工同返放時間，計下你返幾耐先買到你想買嘅嘢。
 
-**[Live Demo](https://wallacewong329.github.io/hourly-worth/)**
+<a href="https://wallacewong329.github.io/hourly-worth/" target="_blank"><strong>Live Demo</strong></a>
 
 ## 功能
 
 - 💰 月薪制 / 時薪制 切換
+- ⏰ 兩種輸入方式：輸入時間（放工時間）或直接輸入工時（每日返幾個鐘）
 - ⏰ 每日輸入返放時間（支持長短週）
 - 🔄 自動扣除休息時間
 - 📊 即時計算：時薪、日薪、周薪、月薪、年薪

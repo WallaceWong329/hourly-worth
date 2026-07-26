@@ -39,9 +39,14 @@ input::placeholder{color:#475569}
 .toggle-bg .dot{width:18px;height:18px;border-radius:50%;background:#fff;position:absolute;top:2px;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
 .toggle-on{background:#38bdf8}.toggle-on .dot{left:20px}
 .toggle-off{background:#475569}.toggle-off .dot{left:2px}
+.hours-input{background:rgba(15,23,42,.6);border:1px solid rgba(148,163,184,.2);border-radius:.5rem;color:#38bdf8;padding:.5rem .75rem;width:100%;font-size:.9rem;font-weight:600;text-align:center;transition:border-color .2s;outline:none;-moz-appearance:textfield}
+.hours-input::-webkit-outer-spin-button,.hours-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.hours-input:focus{border-color:#38bdf8;box-shadow:0 0 0 3px rgba(56,189,248,.15)}
+.day-row-hours{display:grid;grid-template-columns:2rem 1fr auto 3rem 1.5rem;align-items:center;gap:.35rem;padding:.3rem 0}
 .btn{padding:.4rem .8rem;border-radius:.5rem;font-size:.75rem;font-weight:500;cursor:pointer;transition:all .15s;border:none;white-space:nowrap}
 .btn-ghost{background:rgba(148,163,184,.1);color:#94a3b8;border:1px solid rgba(148,163,184,.15)}
 .btn-ghost:hover{background:rgba(148,163,184,.2);color:#e2e8f0}
+.btn-active-mode{background:linear-gradient(135deg,rgba(56,189,248,.2),rgba(168,85,247,.2));color:#38bdf8;border:1px solid rgba(56,189,248,.4)}
 .mode-btn{padding:.5rem 1rem;border-radius:.5rem;font-size:.85rem;font-weight:600;cursor:pointer;transition:all .2s;border:2px solid transparent}
 .mode-active{background:linear-gradient(135deg,rgba(56,189,248,.2),rgba(168,85,247,.2));border-color:#38bdf8;color:#38bdf8}
 .mode-inactive{background:rgba(15,23,42,.4);color:#64748b;border-color:rgba(148,163,184,.1)}
@@ -59,7 +64,7 @@ input::placeholder{color:#475569}
 .collapsed-summary{margin-left:auto;font-size:.7rem;color:#64748b;white-space:nowrap}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 .fade-in{animation:fadeIn .3s ease}
-@media(max-width:480px){.day-row{grid-template-columns:1.8rem 1fr auto 1fr auto 2.2rem 1.2rem;gap:.2rem}input[type=time]{padding:.35rem .4rem;font-size:.8rem}.day-label{font-size:.7rem}.result-box .val{font-size:1.2rem}}
+@media(max-width:480px){.day-row{grid-template-columns:1.8rem 1fr auto 1fr auto 2.2rem 1.2rem;gap:.2rem}.day-row-hours{grid-template-columns:1.8rem 1fr auto 2.2rem 1.2rem;gap:.2rem}input[type=time]{padding:.35rem .4rem;font-size:.8rem}.day-label{font-size:.7rem}.result-box .val{font-size:1.2rem}}
 </style>
 </head>
 <body>
@@ -112,11 +117,20 @@ input::placeholder{color:#475569}
 </div>
 <div class="section-body" :style="openWork?{maxHeight:'3000px',opacity:1}:{maxHeight:'0px',opacity:0}">
 <div style="padding-bottom:1rem">
-<div class="flex items-center gap-2 mb-3" style="padding:0 .25rem">
+<div class="flex items-center gap-2 mb-3" style="padding:0 .25rem" v-if="workInputMode==='time'">
 <span class="hint-lg">每日扣除休息</span>
 <input type="number" v-model.number="breakMinutes" min="0" max="120" step="5" style="width:50px;text-align:center;padding:.35rem .4rem;font-size:.85rem">
 <span class="hint-lg">分鐘</span>
 </div>
+
+<div class="flex items-center gap-2 mb-3" style="padding:0 .25rem">
+<span class="hint-lg">輸入方式</span>
+<div class="flex gap-1">
+<button class="btn" :class="workInputMode==='time'?'btn-active-mode':'btn-ghost'" @click.stop="workInputMode='time'">⏰ 輸入時間</button>
+<button class="btn" :class="workInputMode==='hours'?'btn-active-mode':'btn-ghost'" @click.stop="workInputMode='hours'">🔢 直接輸入工時</button>
+</div>
+</div>
+<p v-if="workInputMode==='hours'" class="hint" style="padding:0 .25rem;margin-bottom:.5rem">直接輸入每日返幾多個鐘（例如 8），唔使再扣休息時間</p>
 
 <div class="card-bright">
 <div class="flex items-center justify-between mb-2">
@@ -126,7 +140,7 @@ input::placeholder{color:#475569}
 <button class="btn btn-ghost" @click.stop="syncLongWeekMF">同步一至五</button>
 </div>
 </div>
-<div v-for="(d,i) in weekDays" :key="'l'+i" class="day-row">
+<div v-for="(d,i) in weekDays" :key="'l'+i" class="day-row" v-if="workInputMode==='time'">
 <span class="day-label">{{ d }}</span>
 <input type="time" v-model="longWeek[i].start">
 <span class="separator">-</span>
@@ -134,6 +148,13 @@ input::placeholder{color:#475569}
 <span class="separator">-</span>
 <span class="day-hours">{{ longWeekDayH[i]>0?fmt1(longWeekDayH[i])+'h':'' }}</span>
 <span v-if="longWeek[i].start||longWeek[i].end" class="day-clear" @click.stop="clearDay('long',i)" title="清除">✕</span>
+<span v-else></span>
+</div>
+<div v-for="(d,i) in weekDays" :key="'lh'+i" class="day-row-hours" v-else>
+<span class="day-label">{{ d }}</span>
+<input type="number" class="hours-input" v-model.number="longWeekHours[i]" min="0" max="24" step="0.5" :placeholder="longWeekDefault[i]">
+<span class="day-hours">{{ longWeekHours[i]>0?fmt1(longWeekHours[i])+'h':'' }}</span>
+<span v-if="longWeekHours[i]>0" class="day-clear" @click.stop="clearDayHours('long',i)" title="清除">✕</span>
 <span v-else></span>
 </div>
 </div>
@@ -155,7 +176,7 @@ input::placeholder{color:#475569}
 <button class="btn btn-ghost" @click.stop="syncShortWeekMF">同步一至五</button>
 </div>
 </div>
-<div v-for="(d,i) in weekDays" :key="'s'+i" class="day-row">
+<div v-for="(d,i) in weekDays" :key="'s'+i" class="day-row" v-if="workInputMode==='time'">
 <span class="day-label">{{ d }}</span>
 <input type="time" v-model="shortWeek[i].start">
 <span class="separator">-</span>
@@ -163,6 +184,13 @@ input::placeholder{color:#475569}
 <span class="separator">-</span>
 <span class="day-hours">{{ shortWeekDayH[i]>0?fmt1(shortWeekDayH[i])+'h':'' }}</span>
 <span v-if="shortWeek[i].start||shortWeek[i].end" class="day-clear" @click.stop="clearDay('short',i)" title="清除">✕</span>
+<span v-else></span>
+</div>
+<div v-for="(d,i) in weekDays" :key="'sh'+i" class="day-row-hours" v-else>
+<span class="day-label">{{ d }}</span>
+<input type="number" class="hours-input" v-model.number="shortWeekHours[i]" min="0" max="24" step="0.5" :placeholder="shortWeekDefault[i]">
+<span class="day-hours">{{ shortWeekHours[i]>0?fmt1(shortWeekHours[i])+'h':'' }}</span>
+<span v-if="shortWeekHours[i]>0" class="day-clear" @click.stop="clearDayHours('short',i)" title="清除">✕</span>
 <span v-else></span>
 </div>
 </div>
@@ -272,20 +300,25 @@ const hasShortWeek=ref(false)
 const longWeeksPerMonth=ref(2)
 const shortWeeksPerMonth=ref(2)
 const shortWeek=ref([mkDay('09:00','18:00'),mkDay('09:00','18:00'),mkDay('09:00','18:00'),mkDay('09:00','18:00'),mkDay('09:00','18:00'),emptyDay(),emptyDay()])
+const workInputMode=ref('time')
+const longWeekHours=ref([9,9,9,9,9,0,0])
+const shortWeekHours=ref([9,9,9,9,9,0,0])
+const longWeekDefault=['9','9','9','9','9','','']
+const shortWeekDefault=['9','9','9','9','9','','']
 const itemCost=ref(null)
 const openSalary=ref(true)
 const openWork=ref(true)
 const openResults=ref(true)
 const openItem=ref(true)
 
-function loadState(){try{const s=JSON.parse(localStorage.getItem('wage-calc-v3'));if(!s)return;salaryMode.value=s.salaryMode||'monthly';salaryAmount.value=s.salaryAmount;breakMinutes.value=s.breakMinutes??60;if(s.longWeek?.length===7)longWeek.value=cloneDays(s.longWeek);hasShortWeek.value=s.hasShortWeek||false;longWeeksPerMonth.value=s.longWeeksPerMonth??2;shortWeeksPerMonth.value=s.shortWeeksPerMonth??2;if(s.shortWeek?.length===7)shortWeek.value=cloneDays(s.shortWeek);itemCost.value=s.itemCost;openSalary.value=s.openSalary!==false;openWork.value=s.openWork!==false;openResults.value=s.openResults!==false;openItem.value=s.openItem!==false}catch(e){}}
+function loadState(){try{const s=JSON.parse(localStorage.getItem('wage-calc-v3'));if(!s)return;salaryMode.value=s.salaryMode||'monthly';salaryAmount.value=s.salaryAmount;breakMinutes.value=s.breakMinutes??60;if(s.longWeek?.length===7)longWeek.value=cloneDays(s.longWeek);hasShortWeek.value=s.hasShortWeek||false;longWeeksPerMonth.value=s.longWeeksPerMonth??2;shortWeeksPerMonth.value=s.shortWeeksPerMonth??2;if(s.shortWeek?.length===7)shortWeek.value=cloneDays(s.shortWeek);workInputMode.value=s.workInputMode||'time';if(s.longWeekHours?.length===7)longWeekHours.value=[...s.longWeekHours];if(s.shortWeekHours?.length===7)shortWeekHours.value=[...s.shortWeekHours];itemCost.value=s.itemCost;openSalary.value=s.openSalary!==false;openWork.value=s.openWork!==false;openResults.value=s.openResults!==false;openItem.value=s.openItem!==false}catch(e){}}
 loadState()
 
-function saveState(){try{localStorage.setItem('wage-calc-v3',JSON.stringify({salaryMode:salaryMode.value,salaryAmount:salaryAmount.value,breakMinutes:breakMinutes.value,longWeek:cloneDays(longWeek.value),hasShortWeek:hasShortWeek.value,longWeeksPerMonth:longWeeksPerMonth.value,shortWeeksPerMonth:shortWeeksPerMonth.value,shortWeek:cloneDays(shortWeek.value),itemCost:itemCost.value,openSalary:openSalary.value,openWork:openWork.value,openResults:openResults.value,openItem:openItem.value}))}catch(e){}}
+function saveState(){try{localStorage.setItem('wage-calc-v3',JSON.stringify({salaryMode:salaryMode.value,salaryAmount:salaryAmount.value,breakMinutes:breakMinutes.value,longWeek:cloneDays(longWeek.value),hasShortWeek:hasShortWeek.value,longWeeksPerMonth:longWeeksPerMonth.value,shortWeeksPerMonth:shortWeeksPerMonth.value,shortWeek:cloneDays(shortWeek.value),workInputMode:workInputMode.value,longWeekHours:[...longWeekHours.value],shortWeekHours:[...shortWeekHours.value],itemCost:itemCost.value,openSalary:openSalary.value,openWork:openWork.value,openResults:openResults.value,openItem:openItem.value}))}catch(e){}}
 watchEffect(saveState)
 
-const longWeekDayH=computed(()=>longWeek.value.map(d=>calcHours(d,breakMinutes.value)))
-const shortWeekDayH=computed(()=>shortWeek.value.map(d=>calcHours(d,breakMinutes.value)))
+const longWeekDayH=computed(()=>workInputMode.value==='hours'?longWeekHours.value.map(h=>Math.max(0,h||0)):longWeek.value.map(d=>calcHours(d,breakMinutes.value)))
+const shortWeekDayH=computed(()=>workInputMode.value==='hours'?shortWeekHours.value.map(h=>Math.max(0,h||0)):shortWeek.value.map(d=>calcHours(d,breakMinutes.value)))
 const longWeekDays=computed(()=>longWeekDayH.value.filter(h=>h>0).length)
 const longWeekTotalH=computed(()=>longWeekDayH.value.reduce((a,b)=>a+b,0))
 const shortWeekDays=computed(()=>shortWeekDayH.value.filter(h=>h>0).length)
@@ -311,17 +344,27 @@ const itemHours=computed(()=>results.value.hourly>0&&itemCost.value>0?itemCost.v
 const itemDays=computed(()=>results.value.avgDailyHours>0&&itemCost.value>0?itemHours.value/results.value.avgDailyHours:0)
 const itemWorkPercent=computed(()=>results.value.monthly>0&&itemCost.value>0?Math.round(itemCost.value/results.value.monthly*100):0)
 
-function copyLongToShort(){shortWeek.value=longWeek.value.map(d=>({...d}))}
-function syncLongWeekMF(){const m={...longWeek.value[0]};longWeek.value=longWeek.value.map((d,i)=>i<=4?{...m}:{...d})}
-function syncShortWeekMF(){const m={...shortWeek.value[0]};shortWeek.value=shortWeek.value.map((d,i)=>i<=4?{...m}:{...d})}
-function clearAll(){salaryMode.value='monthly';salaryAmount.value=null;breakMinutes.value=60;longWeek.value=[mkDay('09:00','18:00'),mkDay('09:00','18:00'),mkDay('09:00','18:00'),mkDay('09:00','18:00'),mkDay('09:00','18:00'),emptyDay(),emptyDay()];hasShortWeek.value=false;longWeeksPerMonth.value=2;shortWeeksPerMonth.value=2;shortWeek.value=[mkDay('09:00','18:00'),mkDay('09:00','18:00'),mkDay('09:00','18:00'),mkDay('09:00','18:00'),mkDay('09:00','18:00'),emptyDay(),emptyDay()];itemCost.value=null;try{localStorage.removeItem('wage-calc-v3')}catch(e){}}
-function clearWork(){breakMinutes.value=60;longWeek.value=[mkDay('09:00','18:00'),mkDay('09:00','18:00'),mkDay('09:00','18:00'),mkDay('09:00','18:00'),mkDay('09:00','18:00'),emptyDay(),emptyDay()];hasShortWeek.value=false;longWeeksPerMonth.value=2;shortWeeksPerMonth.value=2;shortWeek.value=[mkDay('09:00','18:00'),mkDay('09:00','18:00'),mkDay('09:00','18:00'),mkDay('09:00','18:00'),mkDay('09:00','18:00'),emptyDay(),emptyDay()]}
+function copyLongToShort(){
+if(workInputMode.value==='hours'){shortWeekHours.value=[...longWeekHours.value]}
+else{shortWeek.value=longWeek.value.map(d=>({...d}))}
+}
+function syncLongWeekMF(){
+if(workInputMode.value==='hours'){const v=longWeekHours.value[0];longWeekHours.value=longWeekHours.value.map((h,i)=>i<=4?v:h)}
+else{const m={...longWeek.value[0]};longWeek.value=longWeek.value.map((d,i)=>i<=4?{...m}:{...d})}
+}
+function syncShortWeekMF(){
+if(workInputMode.value==='hours'){const v=shortWeekHours.value[0];shortWeekHours.value=shortWeekHours.value.map((h,i)=>i<=4?v:h)}
+else{const m={...shortWeek.value[0]};shortWeek.value=shortWeek.value.map((d,i)=>i<=4?{...m}:{...d})}
+}
+function clearAll(){salaryMode.value='monthly';salaryAmount.value=null;breakMinutes.value=60;longWeek.value=[mkDay('09:00','18:00'),mkDay('09:00','18:00'),mkDay('09:00','18:00'),mkDay('09:00','18:00'),mkDay('09:00','18:00'),emptyDay(),emptyDay()];hasShortWeek.value=false;longWeeksPerMonth.value=2;shortWeeksPerMonth.value=2;shortWeek.value=[mkDay('09:00','18:00'),mkDay('09:00','18:00'),mkDay('09:00','18:00'),mkDay('09:00','18:00'),mkDay('09:00','18:00'),emptyDay(),emptyDay()];workInputMode.value='time';longWeekHours.value=[9,9,9,9,9,0,0];shortWeekHours.value=[9,9,9,9,9,0,0];itemCost.value=null;try{localStorage.removeItem('wage-calc-v3')}catch(e){}}
+function clearWork(){breakMinutes.value=60;longWeek.value=[mkDay('09:00','18:00'),mkDay('09:00','18:00'),mkDay('09:00','18:00'),mkDay('09:00','18:00'),mkDay('09:00','18:00'),emptyDay(),emptyDay()];hasShortWeek.value=false;longWeeksPerMonth.value=2;shortWeeksPerMonth.value=2;shortWeek.value=[mkDay('09:00','18:00'),mkDay('09:00','18:00'),mkDay('09:00','18:00'),mkDay('09:00','18:00'),mkDay('09:00','18:00'),emptyDay(),emptyDay()];longWeekHours.value=[9,9,9,9,9,0,0];shortWeekHours.value=[9,9,9,9,9,0,0]}
 function clearDay(which,i){var src=which==='long'?longWeek:shortWeek;var copy=src.value.map(d=>({start:d.start,end:d.end}));copy[i]={start:'',end:''};src.value=copy}
+function clearDayHours(which,i){var src=which==='long'?longWeekHours:shortWeekHours;var copy=[...src.value];copy[i]=0;src.value=copy}
 function fmt(n){if(n==null||isNaN(n))return'0';return n.toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:0})}
 function fmt1(n){if(n==null||isNaN(n))return'0';return n.toLocaleString('en',{minimumFractionDigits:1,maximumFractionDigits:1})}
 function fmt2(n){if(n==null||isNaN(n))return'0';return n.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2})}
 
-return{weekDays,salaryMode,salaryAmount,breakMinutes,longWeek,hasShortWeek,longWeeksPerMonth,shortWeeksPerMonth,shortWeek,itemCost,openSalary,openWork,openResults,openItem,longWeekDayH,shortWeekDayH,longWeekDays,longWeekTotalH,shortWeekDays,shortWeekTotalH,totalWeeksPerMonth,isValid,results,itemMinutes,itemHours,itemDays,itemWorkPercent,copyLongToShort,syncLongWeekMF,syncShortWeekMF,clearAll,clearWork,clearDay,fmt,fmt1,fmt2}
+return{weekDays,salaryMode,salaryAmount,breakMinutes,longWeek,hasShortWeek,longWeeksPerMonth,shortWeeksPerMonth,shortWeek,workInputMode,longWeekHours,shortWeekHours,longWeekDefault,shortWeekDefault,itemCost,openSalary,openWork,openResults,openItem,longWeekDayH,shortWeekDayH,longWeekDays,longWeekTotalH,shortWeekDays,shortWeekTotalH,totalWeeksPerMonth,isValid,results,itemMinutes,itemHours,itemDays,itemWorkPercent,copyLongToShort,syncLongWeekMF,syncShortWeekMF,clearAll,clearWork,clearDay,clearDayHours,fmt,fmt1,fmt2}
 }}).mount('#app')
 </script>
 </body>
