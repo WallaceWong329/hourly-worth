@@ -287,7 +287,7 @@ const{createApp,ref,computed,watchEffect}=Vue
 function mkDay(s,e){return{start:s||'09:00',end:e||'18:00'}}
 function emptyDay(){return{start:'',end:''}}
 function parseTime(t){if(!t)return 0;const a=t.split(':');return+a[0]*60+(+a[1])}
-function calcHours(d,bk){if(!d.start||!d.end)return 0;const s=parseTime(d.start),e=parseTime(d.end);return e>s?Math.max(0,(e-s-bk)/60):0}
+function calcHours(d,bk){if(!d.start||!d.end)return 0;const s=parseTime(d.start),e=parseTime(d.end);if(e<=s)return 0;const total=e-s;return(total>bk?total-bk:total)/60}
 function cloneDays(a){return a.map(d=>({start:d.start||'',end:d.end||''}))}
 
 createApp({setup(){
