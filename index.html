@@ -142,9 +142,9 @@ input::placeholder{color:#475569}
 </div>
 <div v-for="(d,i) in weekDays" :key="'l'+i" class="day-row" v-if="workInputMode==='time'">
 <span class="day-label">{{ d }}</span>
-<input type="time" v-model="longWeek[i].start">
+<input type="time" :value="longWeek[i].start" @input="setDay('long',i,'start',$event.target.value)" @change="setDay('long',i,'start',$event.target.value)">
 <span class="separator">-</span>
-<input type="time" v-model="longWeek[i].end">
+<input type="time" :value="longWeek[i].end" @input="setDay('long',i,'end',$event.target.value)" @change="setDay('long',i,'end',$event.target.value)">
 <span class="separator">-</span>
 <span class="day-hours">{{ longWeekDayH[i]>0?fmt1(longWeekDayH[i])+'h':'' }}</span>
 <span v-if="longWeek[i].start||longWeek[i].end" class="day-clear" @click.stop="clearDay('long',i)" title="清除">✕</span>
@@ -178,9 +178,9 @@ input::placeholder{color:#475569}
 </div>
 <div v-for="(d,i) in weekDays" :key="'s'+i" class="day-row" v-if="workInputMode==='time'">
 <span class="day-label">{{ d }}</span>
-<input type="time" v-model="shortWeek[i].start">
+<input type="time" :value="shortWeek[i].start" @input="setDay('short',i,'start',$event.target.value)" @change="setDay('short',i,'start',$event.target.value)">
 <span class="separator">-</span>
-<input type="time" v-model="shortWeek[i].end">
+<input type="time" :value="shortWeek[i].end" @input="setDay('short',i,'end',$event.target.value)" @change="setDay('short',i,'end',$event.target.value)">
 <span class="separator">-</span>
 <span class="day-hours">{{ shortWeekDayH[i]>0?fmt1(shortWeekDayH[i])+'h':'' }}</span>
 <span v-if="shortWeek[i].start||shortWeek[i].end" class="day-clear" @click.stop="clearDay('short',i)" title="清除">✕</span>
@@ -286,6 +286,7 @@ input::placeholder{color:#475569}
 const{createApp,ref,computed,watchEffect}=Vue
 function mkDay(s,e){return{start:s||'09:00',end:e||'18:00'}}
 function emptyDay(){return{start:'',end:''}}
+function setDay(which,i,field,v){var src=which==='long'?longWeek:shortWeek;var a=src.value.map(d=>({start:d.start,end:d.end}));a[i][field]=v;src.value=a}
 function parseTime(t){if(!t)return 0;const a=t.split(':');return(+a[0]||0)*60+(+a[1]||0)}
 function calcHours(d,bk){if(!d.start||!d.end)return 0;const s=parseTime(d.start),e=parseTime(d.end);if(e<=s)return 0;const total=e-s;return(total>bk?total-bk:total)/60}
 function cloneDays(a){return a.map(d=>({start:d.start||'',end:d.end||''}))}
@@ -365,7 +366,7 @@ function fmt(n){if(n==null||isNaN(n))return'0';return n.toLocaleString('en',{min
 function fmt1(n){if(n==null||isNaN(n))return'0';return n.toLocaleString('en',{minimumFractionDigits:1,maximumFractionDigits:1})}
 function fmt2(n){if(n==null||isNaN(n))return'0';return n.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2})}
 
-return{weekDays,salaryMode,salaryAmount,breakMinutes,longWeek,hasShortWeek,longWeeksPerMonth,shortWeeksPerMonth,shortWeek,workInputMode,longWeekHours,shortWeekHours,longWeekDefault,shortWeekDefault,itemCost,openSalary,openWork,openResults,openItem,longWeekDayH,shortWeekDayH,longWeekDays,longWeekTotalH,shortWeekDays,shortWeekTotalH,totalWeeksPerMonth,isValid,results,itemMinutes,itemHours,itemDays,itemWorkPercent,copyLongToShort,syncLongWeekMF,syncShortWeekMF,clearAll,clearWork,clearDay,clearDayHours,clampHours,fmt,fmt1,fmt2}
+return{weekDays,salaryMode,salaryAmount,breakMinutes,longWeek,hasShortWeek,longWeeksPerMonth,shortWeeksPerMonth,shortWeek,workInputMode,longWeekHours,shortWeekHours,longWeekDefault,shortWeekDefault,itemCost,openSalary,openWork,openResults,openItem,longWeekDayH,shortWeekDayH,longWeekDays,longWeekTotalH,shortWeekDays,shortWeekTotalH,totalWeeksPerMonth,isValid,results,itemMinutes,itemHours,itemDays,itemWorkPercent,copyLongToShort,syncLongWeekMF,syncShortWeekMF,clearAll,clearWork,clearDay,clearDayHours,clampHours,setDay,fmt,fmt1,fmt2}
 }}).mount('#app')
 </script>
 </body>
