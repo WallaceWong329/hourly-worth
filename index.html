@@ -286,7 +286,6 @@ input::placeholder{color:#475569}
 const{createApp,ref,computed,watchEffect}=Vue
 function mkDay(s,e){return{start:s||'09:00',end:e||'18:00'}}
 function emptyDay(){return{start:'',end:''}}
-function setDay(which,i,field,v){var src=which==='long'?longWeek:shortWeek;var a=src.value.map(d=>({start:d.start,end:d.end}));a[i][field]=v;src.value=a}
 function parseTime(t){if(!t)return 0;const a=t.split(':');return(+a[0]||0)*60+(+a[1]||0)}
 function calcHours(d,bk){if(!d.start||!d.end)return 0;const s=parseTime(d.start),e=parseTime(d.end);if(e<=s)return 0;const total=e-s;return(total>bk?total-bk:total)/60}
 function cloneDays(a){return a.map(d=>({start:d.start||'',end:d.end||''}))}
@@ -362,6 +361,7 @@ function clearWork(){breakMinutes.value=60;longWeek.value=[mkDay('09:00','18:00'
 function clearDay(which,i){var src=which==='long'?longWeek:shortWeek;var copy=src.value.map(d=>({start:d.start,end:d.end}));copy[i]={start:'',end:''};src.value=copy}
 function clearDayHours(which,i){var src=which==='long'?longWeekHours:shortWeekHours;var copy=[...src.value];copy[i]=0;src.value=copy}
 function clampHours(which,i){var src=which==='long'?longWeekHours:shortWeekHours;var v=src.value[i];if(v>24){var copy=[...src.value];copy[i]=24;src.value=copy}else if(v<0){var copy=[...src.value];copy[i]=0;src.value=copy}}
+function setDay(which,i,field,v){var src=which==='long'?longWeek:shortWeek;var a=src.value.map(d=>({start:d.start,end:d.end}));a[i][field]=v;src.value=a}
 function fmt(n){if(n==null||isNaN(n))return'0';return n.toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:0})}
 function fmt1(n){if(n==null||isNaN(n))return'0';return n.toLocaleString('en',{minimumFractionDigits:1,maximumFractionDigits:1})}
 function fmt2(n){if(n==null||isNaN(n))return'0';return n.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2})}
